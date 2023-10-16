@@ -1189,6 +1189,51 @@ with gr.Blocks(title="🔊",theme=gr.themes.Base(primary_hue="rose",neutral_hue=
                 https://paypal.me/lesantillan
                 """
                 )
+         # Function to convert youtube url into vox and accomp
+        def separate_audio(youtube_url):
+            yt = pytube.YouTube(youtube_url)
+            # Choose the stream for video (medium quality MP4)
+            video_stream = yt.streams.filter(progressive=True, file_extension='mp4').order_by('resolution').desc().first()
+        
+            # Choose the destination folder and filename
+            save_path = "NewFolder"
+            file_name = "fullsong.mp3"
+            # Download the video in MP4 format
+            video_stream.download(output_path=save_path, filename="temp_video.mp4")
+        
+            # Convert the MP4 video to MP3 format
+            video_file_path = os.path.join(save_path, "temp_video.mp4")
+            audio = AudioSegment.from_file(video_file_path, format="mp4")
+            audio.export(os.path.join(save_path, "temp_audio.mp3"), format="mp3")
+        
+            # Check and limit the duration
+            max_duration = 105000  # 1 minute and 45 seconds in milliseconds
+            audio = AudioSegment.from_file(os.path.join(save_path, "temp_audio.mp3"), format="mp3")
+            if len(audio) > max_duration:
+                audio = audio[:max_duration]
+        
+            # Save the trimmed audio
+            audio.export(os.path.join(save_path, file_name), format="mp3")
+        
+            # Initialize Spleeter with the desired model (splits into vocals and accompaniment)
+            separator = Separator('spleeter:2stems-16kHz')
+        
+            # Process the audio file and save the stems
+            audio_file = os.path.join(save_path, file_name)
+            separator.separate_to_file(audio_file, 'outputt')
+        
+            wav_file = AudioSegment.from_file("/content/outputt/fullsong/vocals.wav")
+            wav_file.export("Audio2.mp3", format="mp3")
+        
+            # Return the paths to the separated vocals and accompaniment
+            return {
+                "vocals": "outputt/fullsong/vocals.wav",
+                "accompaniment": "outputt/fullsong/accompaniment.wav"
+            }
+        with gr.TabItem("Custom_1"):
+            with gr.Row():
+                with gr.Column():
+                    with gr.Interface(fn=separate_audio, inputs="text", outputs=["text"], live=True)
         with gr.TabItem(i18n("训练")):
             with gr.Row():
                 with gr.Column():
