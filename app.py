@@ -1233,7 +1233,7 @@ with gr.Blocks(title="🔊",theme=gr.themes.Base(primary_hue="rose",neutral_hue=
         with gr.TabItem("Custom_1"):
             with gr.Row():
                 with gr.Column():
-                    with gr.Interface(fn=separate_audio, inputs="text", outputs=["text"], live=True):
+                    gr.Interface(fn=separate_audio, inputs="text", outputs=["text"], live=True)
         with gr.TabItem(i18n("训练")):
             with gr.Row():
                 with gr.Column():
