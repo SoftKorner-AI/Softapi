@@ -1234,7 +1234,7 @@ with gr.Blocks(title="🔊",theme=gr.themes.Base(primary_hue="rose",neutral_hue=
             audio_file = os.path.join(save_path, file_name)
             separator.separate_to_file(audio_file, 'outputt')
         
-            wav_file = AudioSegment.from_file("/content/outputt/fullsong/vocals.wav")
+            wav_file = AudioSegment.from_file("/content/project/outputt/fullsong/vocals.wav")
             wav_file.export("Audio2.mp3", format="mp3")
         
             # Return the paths to the separated vocals and accompaniment
