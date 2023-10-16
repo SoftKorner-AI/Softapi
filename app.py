@@ -44,6 +44,7 @@ import pytube
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+
 logging.getLogger("numba").setLevel(logging.WARNING)
 
 logger = logging.getLogger(__name__)
@@ -1246,6 +1247,46 @@ with gr.Blocks(title="🔊",theme=gr.themes.Base(primary_hue="rose",neutral_hue=
             with gr.Row():
                 with gr.Column():
                     gr.Interface(fn=separate_audio, inputs="text", outputs=["text"], live=True)
+        def KachaAudio(AudioUrl):
+            file_url = AudioUrl  # Replace with the actual URL
+            file_name = "Audio.mp3"  # Replace with the desired file name
+            
+            response = requests.get(file_url)
+            
+            # Check if the request was successful (status code 200)
+            if response.status_code == 200:
+                # Get the content of the response
+                file_content = response.content
+            else:
+                print(f"Failed to download the file. Status code: {response.status_code}")
+            
+            file_path = os.path.join("/content/project/audios", file_name)
+            
+            with open(file_path, "wb") as file:
+                file.write(file_content)
+            
+            print(f"File '{file_name}' has been downloaded and saved to '/content/project/audios' directory.")
+            
+            mp3_file = AudioSegment.from_file(os.path.join("/content/project/audios", "Audio.mp3"))
+            
+            mp3_file.export("Audio.mp3", format="mp3")
+            max_duration = 105000  # 1 minute and 45 seconds in milliseconds
+            audio = AudioSegment.from_file(os.path.join("/content/project/audios", "Audio.mp3"), format="mp3")
+            if len(audio) > max_duration:
+                audio = audio[:max_duration]  # Trim the audio if it exceeds the maximum duration
+                print("Trim done")
+            
+            # Save the trimmed audio
+            audio.export(os.path.join("/content/project/audios", "Audio.mp3"), format="mp3")
+            
+            print("saved trimed audio")
+            return {
+                True
+            }
+        with gr.TabItem("Custom_2"):
+            with gr.Row():
+                with gr.Column():
+                    gr.Interface(fn=KachaAudio, inputs="text", outputs=["text"], live=True)
         with gr.TabItem(i18n("训练")):
             with gr.Row():
                 with gr.Column():
