@@ -1054,7 +1054,7 @@ with gr.Blocks(title="🔊",theme=gr.themes.Base(primary_hue="rose",neutral_hue=
                         protect0,
                     ],
                     [vc_output1, vc_output2],
-                    api_name="infer_convert",
+                    api_name="infer_convert2",
                 )
             with gr.Row():
                 with gr.Accordion(open=False, label=i18n("批量转换, 输入待转换音频文件夹, 或上传多个音频文件, 在指定文件夹(默认opt)下输出转换的音频. ")):                
