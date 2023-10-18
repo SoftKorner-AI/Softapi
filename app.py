@@ -1280,26 +1280,7 @@ with gr.Blocks(title="🔊",theme=gr.themes.Base(primary_hue="rose",neutral_hue=
             audio.export(os.path.join("/content/project/audios", "Audio.mp3"), format="mp3")
             
             print("saved trimed audio")
-            (
-                    vc.vc_single,  
-                    [
-                        spk_item,
-                        input_audio0,
-                        vc_transform0,
-                        f0_file,
-                        f0method0,
-                        file_index1,
-                        file_index2,
-                        # file_big_npy1,
-                        index_rate1,
-                        filter_radius0,
-                        resample_sr0,
-                        rms_mix_rate0,
-                        protect0,
-                    ],
-                    [vc_output1, vc_output2],
-                    api_name="infer_convert",
-                )
+            
             return {
                 True
             }
