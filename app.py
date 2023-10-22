@@ -61,6 +61,8 @@ import numpy as np
 import traceback
 import shutil
 import datetime
+from colabcode import ColabCode
+cc = ColabCode(port=12000, code=False)    
 
 logging.getLogger("numba").setLevel(logging.WARNING)
 
@@ -1545,6 +1547,7 @@ with gr.Blocks(title="🔊",theme=gr.themes.Base(primary_hue="rose",neutral_hue=
                             info3,
                             api_name="train_start_all",
                         )
+                
     app = FastAPI()
 
 @app.post("/add_one/")
@@ -1887,6 +1890,9 @@ async def add_one(request: Request):
     server.sendmail(sender_email, recipient_email, msg.as_string())
     print("Mail Sent")
     server.quit()
+
+    cc.run_app(app=app)
+    
     if config.iscolab:
         app.queue(concurrency_count=511, max_size=1022).launch(share=True)
     else:
