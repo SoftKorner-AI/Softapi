@@ -44,6 +44,23 @@ import pytube
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from fastapi import FastAPI, Request
+import os
+import supabase
+import requests
+from urllib.parse import urljoin
+from pydub import AudioSegment
+from supabase import create_client, Client
+from spleeter.separator import Separator
+from gradio_client import Client
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from getpass import getpass
+import numpy as np
+import traceback
+import shutil
+import datetime
 
 logging.getLogger("numba").setLevel(logging.WARNING)
 
@@ -1528,7 +1545,348 @@ with gr.Blocks(title="🔊",theme=gr.themes.Base(primary_hue="rose",neutral_hue=
                             info3,
                             api_name="train_start_all",
                         )
+    app = FastAPI()
 
+@app.post("/add_one/")
+async def add_one(request: Request):
+    data = await request.json()
+    id1 = data.get("id")
+    created_at1 = data.get("created_at")
+    cutstring1 = data.get("cutstring")
+    Audiourl1 = data.get("Audiourl")
+    pitch1 = data.get("pitch")
+    ActorKaName1 = data.get("ActorKaName")
+
+    # Set up your Supabase credentials
+    supabase_url1 = "https://shskktkpyldlyfzglglt.supabase.co"
+    supabase_key1 = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNoc2trdGtweWxkbHlmemdsZ2x0Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTY5NTkwODgyNCwiZXhwIjoyMDExNDg0ODI0fQ.pgpP_JT5Hgs7_pBeZB7El3H1-9Aakha_KUUdEozX_D8"
+    
+    # Initialize Supabase client
+    supabase_client1 = supabase.Client(supabase_url1, supabase_key1)
+    
+    supabase: Client = create_client(supabase_url1, supabase_key1)
+    # Define the table name
+    table_name2 = "AppUsers"
+    
+    # Specify the name of the column you want to fetch
+    column_name = "email"
+    
+    response = supabase_client1.from_(table_name2).select(column_name).eq("id", id1).execute()
+    
+    if 'error' in response:
+        print("Error fetching records:", response['error'])
+    else:
+        data = response.data
+        if data:
+            # Process the data
+            column_value = data[0][column_name]
+            print(f"{column_name}: {column_value}")
+        else:
+            print(f"No record found with ID {id1} and created_at {created_at1}")
+
+
+    file_url = Audiourl1  # Replace with the actual URL
+    file_name = "Audio.mp3"  # Replace with the desired file name
+
+    response = requests.get(file_url)
+
+    # Check if the request was successful (status code 200)
+    if response.status_code == 200:
+        # Get the content of the response
+        file_content = response.content
+    else:
+        print(f"Failed to download the file. Status code: {response.status_code}")
+
+    file_path = os.path.join("/content", file_name)
+
+    with open(file_path, "wb") as file:
+        file.write(file_content)
+
+    print(f"File '{file_name}' has been downloaded and saved to '/content' directory.")
+
+    mp3_file = AudioSegment.from_file(os.path.join("/content", "Audio.mp3"))
+
+    mp3_file.export("Audio.mp3", format="mp3")
+    max_duration = 105000  # 1 minute and 45 seconds in milliseconds
+    audio = AudioSegment.from_file(os.path.join("/content", "Audio.mp3"), format="mp3")
+    if len(audio) > max_duration:
+        audio = audio[:max_duration]  # Trim the audio if it exceeds the maximum duration
+        print("Trim done")
+
+    # Save the trimmed audio
+    audio.export(os.path.join("/content", "Audio.mp3"), format="mp3")
+
+    print("saved trimmed audio")
+
+    # Refresh part in Gradio
+
+    names = []
+    for name in os.listdir(weight_root):
+        if name.endswith(".pth"):
+            names.append(name)
+    index_paths = []
+    for root, dirs, files in os.walk(index_root, topdown=False):
+        for name in files:
+            if name.endswith(".index") and "trained" not in name:
+                index_paths.append("%s/%s" % (root, name))
+    audio_files = []
+    for filename in os.listdir("./content"):
+        if filename.endswith(('.wav', '.mp3', '.ogg')):
+            audio_files.append('./content/' + filename)
+
+    # Providing file path in Gradio
+
+    try:
+        file_path = file.name
+        shutil.move(file_path, '/content')
+        return './content/' + os.path.basename(file_path)
+    except AttributeError:
+        try:
+            new_name = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + '.wav'
+            new_path = './content/' + new_name
+            shutil.move(file, new_path)
+            return new_path
+        except TypeError:
+            return None
+    
+    # List of possible values for ActorKaName
+    actor_names = ["Aliyaa Bhutt", "Anshuman Khurana", "Anunya Pande", "Aqif Aslam", "Arihana Grande", "Artik Aryan", "Barijit Singh", "Dhananjay Dutt", "G Praak", "Jahanvi Kapoor", "Jitu Moosewala", "Jublin Nautiyaal", "KeKe", "Kisore Kumaar", "Maknowj Baajpei", "Mikal Jackson", "Modie ji", "Mohdd. Aziz", "Mudit Narayan", "Punkaj Treepathi", "Reftaar", "Rolando", "Semiway Bantaai", "Shaheed Kapooor", "Shehnawazuddin Siddiqui", "Shriya Ghoshal", "Sneha Kakkar", "Somu Nigam", "Sudarshan Raval", "Sukumar Sanu", "Sumohit Chauhan", "Sungkook BTeS", "Swarajkumar Rao", "Teller Swift"]
+
+    # Input value for ActorKaName
+    actor_name_input = ActorKaName1
+
+    # Find the position of actor_name_input in the list
+    if actor_name_input in actor_names:
+        actor_num = actor_names.index(actor_name_input) + 1
+        print(f'The value for "ActorNum" is {actor_num}')
+    else:
+        print('The provided value for "ActorKaName" is not in the list.')
+
+    # You can now use the variable "actor_num" as the integer value for "ActorNum."
+
+    #path to the index file
+    folder_path2 = "/content/project/logs/" + ActorKaName1
+
+    # List all files in the specified folder
+    files = os.listdir(folder_path2)
+
+    # Check if there are any files in the folder
+    if files:
+        # Take the first file found in the folder
+        file_path2 = os.path.join(folder_path2, files[0])
+
+        # Now 'file_path' contains the path to the first file in the folder
+        print("Path to the first file in the folder:", file_path2)
+    else:
+        print("No files found in the folder.")
+
+    full_path2 = file_path2
+
+    # Split the string based on "/content/project/"
+    split_path = full_path2.split("/content/project/")
+
+    # Check if the split produced two parts
+    if len(split_path) == 2:
+        # The second part of the split contains the desired path
+        extracted_path = split_path[1]
+
+        # Print the extracted path
+        print("Extracted Path:", extracted_path)
+    else:
+        print("Path does not match the expected format.")
+
+    sid1 = ActorKaName1
+    input_audio_path = new_path
+    f0_up_key = pitch1
+    f0_file = "/content/Audio.mp3"
+    f0_method = "rmpve"
+    file_index = "Null"
+    file_index2 = extracted_path
+    index_rate = "0.66"
+    filter_radius = "3"
+    resample_sr = "0"
+    rms_mix_rate = "0.21"
+    protect = "0.33"
+    
+    if input_audio_path is None:
+        return "You need to upload an audio", None
+    f0_up_key = int(f0_up_key)
+    try:
+        audio = load_audio(input_audio_path, 16000)
+        audio_max = np.abs(audio).max() / 0.95
+        if audio_max > 1:
+            audio /= audio_max
+        times = [0, 0, 0]
+
+        if self.hubert_model is None:
+            self.hubert_model = load_hubert(self.config)
+
+        file_index = (
+            (
+                file_index.strip(" ")
+                .strip('"')
+                .strip("\n")
+                .strip('"')
+                .strip(" ")
+                .replace("trained", "added")
+            )
+            if file_index != ""
+            else file_index2
+        )  # 防止小白写错，自动帮他替换掉
+
+        audio_opt = self.pipeline.pipeline(
+            self.hubert_model,
+            self.net_g,
+            sid,
+            audio,
+            input_audio_path,
+            times,
+            f0_up_key,
+            f0_method,
+            file_index,
+            index_rate,
+            self.if_f0,
+            filter_radius,
+            self.tgt_sr,
+            resample_sr,
+            rms_mix_rate,
+            self.version,
+            protect,
+            f0_file,
+        )
+        if self.tgt_sr != resample_sr >= 16000:
+            self.tgt_sr = resample_sr
+        index_info = (
+            "Index:\n%s." % file_index
+            if os.path.exists(file_index)
+            else "Index not used."
+        )
+        return (
+            "Success.\n%s\nTime:\nnpy: %.2fs, f0: %.2fs, infer: %.2fs."
+            % (index_info, *times),
+            (self.tgt_sr, audio_opt),
+        )
+    except:
+        info = traceback.format_exc()
+        logger.warn(info)
+        return info, (None, None)
+
+    output_string = result2
+
+    # Split the string by '/'
+    parts = output_string[1].split('/audio.wav')[0]
+    print(parts)
+
+    # Extract the part you want
+    #desired_part = parts[2]
+    #print(desired_part)
+
+    # Create a variable to store it
+    final_filepath = parts
+    print(final_filepath)
+
+    wav_file = AudioSegment from_file(os.path.join(final_filepath, "audio.wav"))
+    
+    wav_file.export(os.path.join(final_filepath, "audio.mp3"), format="mp3")
+    print("conversion to mp3 done")
+
+    # Define the destination file path
+    destination_file_path2 = final_filepath + "/Mergedaudio.mp3"
+
+    # Load the audio files
+    mp3_file1 = AudioSegment.from_file(os.path.join(final_filepath, "audio.mp3"), format="mp3")
+    mp3_file2 = AudioSegment.from_file(os.path.join("/content", "tag.mp3"), format="mp3")
+
+    # Ensure both audio files have the same frame rate
+    mp3_file1 = mp3_file1.set_frame_rate(mp3_file2.frame_rate)
+
+    # Merge the audio files
+    merged_audio = mp3_file1 + mp3_file2
+
+    # Export the merged audio as an MP3 file
+    merged_audio.export(os.path.join(final_filepath, "Mergedaudio.mp3"), format="mp3")
+
+    print("Merging tag complete!")
+
+    # Define the path to the folder where the audio file is located
+    folder_path = final_filepath
+
+    # Define the name of the audio file you want to delete
+    file_name = 'audio.mp3'
+
+    # Create the full path to the file
+    file_path = os.path.join(folder_path, file_name)
+
+    # Check if the file exists before attempting to delete it
+    if os.path.exists(file_path):
+        # Delete the file
+        os.remove(file_path)
+        print(f"The file {file_name} has been deleted.")
+    else:
+        print(f"The file {file_name} does not exist in the specified folder.")
+
+    # Define the path to the folder where the audio file is located
+    folder_path = final_filepath
+
+    # Define the name of the audio file you want to delete
+    file_name = 'audio.wav'
+
+    # Create the full path to the file
+    file_path = os.path.join(folder_path, file_name)
+
+    # Check if the file exists before attempting to delete it
+    if os.path.exists(file_path):
+        # Delete the file
+        os.remove(file_path)
+        print(f"The file {file_name} has been deleted.")
+    else:
+        print(f"The file {file_name} does not exist in the specified folder.")
+
+    # Uploads a file to a bucket and return URL
+
+    # Set up your Supabase credentials
+    supabase_url = "YourSupabaseURL"
+    supabase_key = "YourSupabaseKey"
+
+    # Initialize Supabase client
+    supabase: Client = create_client(supabase_url, supabase_key)
+
+    with open(destination_file_path2, 'rb') as f:
+        supabase.storage.from_("afterC").upload(file=f, path=cutstring + ".mp3", file_options={"content-type": "audio/mpeg"})
+
+    res = supabase.storage.from_('afterC').get_public_url(cutstring + '.mp3')
+
+    print(res)
+
+    response = supabase.table('UserReq2').update({'isServed': '2'}).eq('created_at', created_at).execute()
+    response = supabase.table('UserReq2').update({'ConLink': res}).eq('created_at', created_at).execute()
+
+    print(id + " done")
+
+    # Your Gmail account details
+    sender_email = 'softkorner.ai@gmail.com'
+    sender_password = 'YourPassword'
+    recipient_email = column_value
+
+    # Compose the email
+    subject = 'Voice Conversion Complete'
+    message = "Your voice conversion is a hit! Enjoy listening to it inside the Converted Audios section of the app, and let's convert more voices through our app! 🎉 Helpful Tip: Only use the Pitch feature when you are converting a Male voice to a Female actor/singer voice OR Female voice to a Male actor/singer voice for better results"
+
+    msg = MIMEMultipart()
+    msg['From'] = sender_email
+    msg['To'] = recipient_email
+    msg['Subject'] = subject
+
+    msg.attach(MIMEText(message, 'plain'))
+
+    # Set up the SMTP server and send the email
+    server = smtplib.SMTP('smtp.gmail.com', 587)
+    server.starttls()
+    server.login(sender_email, sender_password)
+
+    server.sendmail(sender_email, recipient_email, msg.as_string())
+    print("Mail Sent")
+    server.quit()
     if config.iscolab:
         app.queue(concurrency_count=511, max_size=1022).launch(share=True)
     else:
