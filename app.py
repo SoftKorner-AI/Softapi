@@ -1785,7 +1785,7 @@ async def add_one(request: Request):
     final_filepath = parts
     print(final_filepath)
 
-    wav_file = AudioSegment from_file(os.path.join(final_filepath, "audio.wav"))
+    wav_file = AudioSegment.from_file(os.path.join(final_filepath, "audio.wav"))
     
     wav_file.export(os.path.join(final_filepath, "audio.mp3"), format="mp3")
     print("conversion to mp3 done")
