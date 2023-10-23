@@ -1891,7 +1891,7 @@ async def add_one(request: Request):
     print("Mail Sent")
     server.quit()
 
-    cc.run_app(app=app)
+cc.run_app(app=app)
     
     if config.iscolab:
         app.queue(concurrency_count=511, max_size=1022).launch(share=True)
